@@ -1,0 +1,54 @@
+import (
+    "github.com/360EntSecGroup-Skylar/excelize/v2"
+    "gorm.io/driver/mysql"
+    "gorm.io/gorm"
+)
+
+type User struct {
+    ID       uint   `gorm:"primary_key"`
+    Name     string
+    Email    string
+    Age      int
+}
+
+func main() {
+    // Inisialisasi koneksi ke database menggunakan GORM
+    dsn := "username:password@tcp(host:port)/database?charset=utf8mb4&parseTime=True&loc=Local"
+    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+    if err != nil {
+        panic("Failed to connect to database")
+    }
+    defer db.Close()
+
+    // Mengambil data dari database menggunakan GORM
+    var users []User
+    db.Find(&users)
+
+    // Membuat file Excel menggunakan excelize
+    file := excelize.NewFile()
+    sheetName := "Sheet1"
+
+    // Menulis header kolom
+    headers := []string{"ID", "Name", "Email", "Age"}
+    for i, header := range headers {
+        col := excelize.ToAlphaString(i+1) + "1"
+        file.SetCellValue(sheetName, col, header)
+    }
+
+    // Menulis data ke dalam file Excel
+    for rowIndex, user := range users {
+        row := rowIndex + 2
+        file.SetCellValue(sheetName, "A"+strconv.Itoa(row), user.ID)
+        file.SetCellValue(sheetName, "B"+strconv.Itoa(row), user.Name)
+        file.SetCellValue(sheetName, "C"+strconv.Itoa(row), user.Email)
+        file.SetCellValue(sheetName, "D"+strconv.Itoa(row), user.Age)
+    }
+
+    // Simpan file Excel
+    err = file.SaveAs("users.xlsx")
+    if err != nil {
+        panic("Failed to save Excel file")
+    }
+}
+
+go get github.com/360EntSecGroup-Skylar/excelize/v2
